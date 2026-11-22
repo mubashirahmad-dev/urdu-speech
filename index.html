@@ -70,6 +70,7 @@
     <div class="row">
       <button id="copy">Copy</button>
       <button id="dl">Download .txt</button>
+      <button id="rtf">Download .rtf</button>
       <button id="clear">Clear</button>
     </div>
   </div>
@@ -237,6 +238,21 @@ $("dl").onclick = () => {
   const blob = new Blob(["\uFEFF" + out.value], { type: "text/plain;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = "urdu-text.txt"; a.click();
+};
+$("rtf").onclick = () => {
+  const esc = t => Array.from(t).map(c => {
+    const n = c.codePointAt(0);
+    if (c === "\\" || c === "{" || c === "}") return "\\" + c;
+    if (n < 128) return c;
+    if (n > 0xFFFF) { const h = ((n - 0x10000) >> 10) + 0xD800, l = ((n - 0x10000) & 0x3FF) + 0xDC00;
+      return "\\u" + (h - 65536) + "?\\u" + (l - 65536) + "?"; }
+    return "\\u" + (n > 32767 ? n - 65536 : n) + "?";
+  }).join("");
+  const body = out.value.split("\n").map(p => "\\pard\\rtlpar\\qr " + esc(p) + "\\par").join("\n");
+  const rtf = "{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Noto Nastaliq Urdu;}}\\f0\\fs36\n" + body + "\n}";
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([rtf], { type: "application/rtf" }));
+  a.download = "urdu-text.rtf"; a.click();
 };
 $("clear").onclick = () => { committed = ""; segs = []; interimText = ""; skip = lastLen; out.value = ""; $("alts").innerHTML = ""; };
 
